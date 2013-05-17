@@ -6,9 +6,8 @@
         this.$el = $(el);
         this.$pinContainer = $(options.containerSelector);
         this.options = options;
-        this.position = $(el).position();
+        this.left = $(el).css('left');
         this.minTop = $(el).offset().top;
-        this.position = $(el).css('position');
     };
 
     PinnedElement.prototype = {
@@ -33,12 +32,34 @@
 
         setOffsetTop: function() {
 
-            var position = this.checkTopOffset() ? 'fixed' : this.position;
+            var position = this.checkTopOffset() ? 'fixed' : 'static';
 
             this.$el.css({
                 'position': position
             });
 
+        },
+
+        togglePin: function() {
+
+            var instance = this,
+                maxTop = this.$pinContainer.offset().top + this.$pinContainer.height(),
+                currentTop = this.$wrap.position().top + $(window).scrollTop();
+
+            if(maxTop > currentTop && $(window).scrollTop() > this.minTop && this.$el.css('position') !== 'fixed') {
+
+                this.$el.css({
+                    'position': 'fixed',
+                    'top': 0,
+                    'left': instance.$wrap.offset().left
+                });
+
+            } else if($(window).scrollTop() <= this.minTop && this.$el.css('position') === 'fixed' || maxTop <= currentTop) {
+
+                this.$el.css({
+                    'position': 'static'
+                });
+            }
         },
 
         wrap: function() {
@@ -53,6 +74,7 @@
             });
 
             instance.$wrap = instance.$el.parent();
+            instance.minPin = instance.$wrap.offset().top;
         }
     };
 
@@ -67,18 +89,18 @@
 
         instance.wrap();
 
-        instance.$el.css({
-            'position': 'fixed',
-            'left': instance.$wrap.offset().left,
-            'top': instance.minTop
-        });
+        // instance.$el.css({
+        //     'position': 'fixed',
+        //     // 'left': ,
+        //     'top': instance.minTop
+        // });
 
         $(window).on('resize', function(e) {
             instance.setOffsetLeft();
         });
 
         $(window).on('scroll', function(e) {
-            instance.setOffsetTop();
+            instance.togglePin();
         });
 
         return this;
